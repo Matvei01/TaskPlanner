@@ -12,6 +12,7 @@ final class TasksViewController: UITableViewController {
     // MARK: - Private Properties
     private let reuseIdentifier = "CellId"
     
+    // MARK: - UI Elements
     private lazy var addBarButtonItem: UIBarButtonItem = {
         let button = UIBarButtonItem(
             systemItem: .add,
@@ -22,7 +23,9 @@ final class TasksViewController: UITableViewController {
     
     // MARK: -  Action
     private lazy var addBarButtonItemTapped = UIAction { [unowned self] _ in
-        print("Add task")
+        let addTaskVC = AddTaskViewController()
+        
+        navigationController?.pushViewController(addTaskVC, animated: true)
     }
     
     // MARK: - Override Methods
