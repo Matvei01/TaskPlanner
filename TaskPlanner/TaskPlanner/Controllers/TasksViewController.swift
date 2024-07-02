@@ -9,8 +9,23 @@ import UIKit
 
 final class TasksViewController: UITableViewController {
     
+    // MARK: - Private Properties
     private let reuseIdentifier = "CellId"
     
+    private lazy var addBarButtonItem: UIBarButtonItem = {
+        let button = UIBarButtonItem(
+            systemItem: .add,
+            primaryAction: addBarButtonItemTapped
+        )
+        return button
+    }()
+    
+    // MARK: -  Action
+    private lazy var addBarButtonItemTapped = UIAction { [unowned self] _ in
+        print("Add task")
+    }
+    
+    // MARK: - Override Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
@@ -35,5 +50,23 @@ private extension TasksViewController {
             UITableViewCell.self,
             forCellReuseIdentifier: reuseIdentifier
         )
+        
+        setupNavigationBar()
+    }
+    
+    func setupNavigationBar() {
+        title = "Tasks"
+        
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.backgroundColor = .systemGreen
+        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.navigationBar.standardAppearance = navBarAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = navBarAppearance
+        navigationController?.navigationBar.tintColor = .white
+        
+        navigationItem.rightBarButtonItem = addBarButtonItem
     }
 }
