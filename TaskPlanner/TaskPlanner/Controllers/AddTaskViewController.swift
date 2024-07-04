@@ -6,8 +6,13 @@
 //
 
 import UIKit
+import CoreData
 
 final class AddTaskViewController: UIViewController {
+    
+    weak var delegate: TaskViewControllerDelegate?
+    
+    private let storageManager = StorageManager.shared
     
     // MARK: - UI Elements
     private lazy var backBarButtonItem: UIBarButtonItem = {
@@ -52,11 +57,13 @@ final class AddTaskViewController: UIViewController {
     }()
     
     private lazy var addTaskStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [taskTextView, saveButton, cancelButton])
+        let stackView = UIStackView(arrangedSubviews: [
+            taskTextView, saveButton, cancelButton
+        ])
         stackView.axis = .vertical
         stackView.alignment = .fill
         stackView.distribution = .fill
-        stackView.spacing = 20
+        stackView.spacing = 25
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
@@ -73,7 +80,7 @@ final class AddTaskViewController: UIViewController {
         
         switch sender.tag {
         case 0:
-            navigationController?.popToRootViewController(animated: true)
+            save()
         default:
             navigationController?.popToRootViewController(animated: true)
         }
@@ -124,6 +131,16 @@ private extension AddTaskViewController {
         navigationItem.leftBarButtonItem = backBarButtonItem
     }
     
+    func save() {
+        guard let taskName = taskTextView.text, !taskName.isEmpty else {
+            showAlert(title: "Error", message: "Fill in all the fields")
+            return
+        }
+        storageManager.create(taskName)
+        delegate?.reloadData()
+        navigationController?.popToRootViewController(animated: true)
+    }
+    
     func createButton(withTitle title: String,
                       andColor color: UIColor,
                       action: UIAction,
@@ -142,6 +159,18 @@ private extension AddTaskViewController {
     }
 }
 
+// MARK: - Alert Controller
+private extension AddTaskViewController {
+    func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "Ok", style: .default) { [unowned self] _ in
+            self.taskTextView.becomeFirstResponder()
+        }
+        alert.addAction(okAction)
+        present(alert, animated: true)
+    }
+}
+
 // MARK: - Constraints
 private extension AddTaskViewController {
     func setConstraints() {
@@ -153,7 +182,7 @@ private extension AddTaskViewController {
         NSLayoutConstraint.activate([
             addTaskStackView.topAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.topAnchor,
-                constant: 30
+                constant: 50
             ),
             addTaskStackView.leadingAnchor.constraint(
                 equalTo: view.leadingAnchor,

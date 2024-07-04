@@ -6,11 +6,18 @@
 //
 
 import UIKit
+import CoreData
+
+protocol TaskViewControllerDelegate: AnyObject {
+    func reloadData()
+}
 
 final class TasksViewController: UITableViewController {
     
     // MARK: - Private Properties
     private let reuseIdentifier = "CellId"
+    private let storageManager = StorageManager.shared
+    private var tasks: [Task] = []
     
     // MARK: - UI Elements
     private lazy var addBarButtonItem: UIBarButtonItem = {
@@ -24,6 +31,7 @@ final class TasksViewController: UITableViewController {
     // MARK: -  Action
     private lazy var addBarButtonItemTapped = UIAction { [unowned self] _ in
         let addTaskVC = AddTaskViewController()
+        addTaskVC.delegate = self
         
         navigationController?.pushViewController(addTaskVC, animated: true)
     }
@@ -36,12 +44,23 @@ final class TasksViewController: UITableViewController {
     
     // MARK: - Table view data source
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        10
+        tasks.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath)
-        
+        let task = tasks[indexPath.row]
+        var content = cell.defaultContentConfiguration()
+        content.text = task.title
+        if let date = task.date {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            content.secondaryText = formatter.string(from: date)
+        } else {
+            content.secondaryText = "No date"
+        }
+        cell.contentConfiguration = content
         return cell
     }
 }
@@ -53,6 +72,8 @@ private extension TasksViewController {
             UITableViewCell.self,
             forCellReuseIdentifier: reuseIdentifier
         )
+        
+        fetchData()
         
         setupNavigationBar()
     }
@@ -71,5 +92,26 @@ private extension TasksViewController {
         navigationController?.navigationBar.tintColor = .white
         
         navigationItem.rightBarButtonItem = addBarButtonItem
+    }
+    
+    func fetchData() {
+        storageManager.fetchData { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+            case .success(let tasks):
+                self.tasks = tasks
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+}
+
+// MARK: - TaskViewControllerDelegate
+extension TasksViewController: TaskViewControllerDelegate {
+    func reloadData() {
+        fetchData()
+        tableView.reloadData()
     }
 }
