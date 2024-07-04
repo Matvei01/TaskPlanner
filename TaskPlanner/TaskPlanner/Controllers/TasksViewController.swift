@@ -41,8 +41,11 @@ final class TasksViewController: UITableViewController {
         super.viewDidLoad()
         setupTableView()
     }
+}
+
+// MARK: - Table view data source
+extension TasksViewController {
     
-    // MARK: - Table view data source
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         tasks.count
     }
@@ -62,6 +65,18 @@ final class TasksViewController: UITableViewController {
         }
         cell.contentConfiguration = content
         return cell
+    }
+}
+
+// MARK: - Table view delegate
+extension TasksViewController {
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let task = tasks[indexPath.row]
+        let editTaskVC = EditTaskViewController()
+        editTaskVC.delegate = self
+        editTaskVC.task = task
+        
+        navigationController?.pushViewController(editTaskVC, animated: true)
     }
 }
 
