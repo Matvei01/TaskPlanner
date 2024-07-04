@@ -126,9 +126,7 @@ class BaseViewController: UIViewController {
         navigationItem.leftBarButtonItem = backBarButtonItem
     }
     
-    func save() {
-        // Этот метод должен быть переопределен в подклассах
-    }
+    func save() {}
     
     func createButton(withTitle title: String,
                       andColor color: UIColor,
