@@ -15,9 +15,21 @@ protocol TaskViewControllerDelegate: AnyObject {
 final class TasksViewController: UITableViewController {
     
     // MARK: - Private Properties
+    private var tasks: [Task] = []
+    private var filteredTasks: [Task] = []
     private let reuseIdentifier = "CellId"
     private let storageManager = StorageManager.shared
-    private var tasks: [Task] = []
+    private let searchController = UISearchController(
+        searchResultsController: nil
+    )
+    
+    private var isFiltering: Bool {
+        return searchController.isActive && !searchBarIsEmpty
+    }
+    
+    private var searchBarIsEmpty: Bool {
+        return searchController.searchBar.text?.isEmpty ?? true
+    }
     
     // MARK: - UI Elements
     private lazy var addBarButtonItem: UIBarButtonItem = {
@@ -47,12 +59,12 @@ final class TasksViewController: UITableViewController {
 extension TasksViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        tasks.count
+        isFiltering ? filteredTasks.count : tasks.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath)
-        let task = tasks[indexPath.row]
+        let task = isFiltering ? filteredTasks[indexPath.row] : tasks[indexPath.row]
         var content = cell.defaultContentConfiguration()
         content.text = task.title
         if let date = task.date {
@@ -71,7 +83,7 @@ extension TasksViewController {
 // MARK: - Table view delegate
 extension TasksViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let task = tasks[indexPath.row]
+        let task = isFiltering ? filteredTasks[indexPath.row] : tasks[indexPath.row]
         let editTaskVC = EditTaskViewController()
         editTaskVC.delegate = self
         editTaskVC.task = task
@@ -79,15 +91,29 @@ extension TasksViewController {
         navigationController?.pushViewController(editTaskVC, animated: true)
     }
     
-    override func tableView(_ tableView: UITableView, 
+    override func tableView(_ tableView: UITableView,
                             commit editingStyle: UITableViewCell.EditingStyle,
                             forRowAt indexPath: IndexPath) {
         
         if editingStyle == .delete {
-            let task = tasks.remove(at: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-            storageManager.delete(task)
+            let task = getTask(at: indexPath)
+            deleteTask(task, at: indexPath)
         }
+    }
+}
+
+// MARK: - UISearchResultsUpdating
+extension TasksViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        filterContentForSearchText(searchController.searchBar.text ?? "")
+    }
+}
+
+// MARK: - TaskViewControllerDelegate
+extension TasksViewController: TaskViewControllerDelegate {
+    func reloadData() {
+        fetchData()
+        tableView.reloadData()
     }
 }
 
@@ -102,13 +128,15 @@ private extension TasksViewController {
         fetchData()
         
         setupNavigationBar()
+        
+        setupSearchController()
     }
     
     func setupNavigationBar() {
         title = "Tasks"
         
         let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.backgroundColor = .systemGreen
+        navBarAppearance.backgroundColor = .appGreen
         navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
         navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
         
@@ -118,6 +146,14 @@ private extension TasksViewController {
         navigationController?.navigationBar.tintColor = .white
         
         navigationItem.rightBarButtonItem = addBarButtonItem
+    }
+    
+    func setupSearchController() {
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search Tasks"
+        navigationItem.searchController = searchController
+        definesPresentationContext = true
     }
     
     func fetchData() {
@@ -132,12 +168,37 @@ private extension TasksViewController {
             }
         }
     }
-}
-
-// MARK: - TaskViewControllerDelegate
-extension TasksViewController: TaskViewControllerDelegate {
-    func reloadData() {
-        fetchData()
+    
+    func filterContentForSearchText(_ searchText: String) {
+        filteredTasks = tasks.filter { (task: Task) -> Bool in
+            return task.title?.lowercased().contains(searchText.lowercased()) ?? false
+        }
+        
         tableView.reloadData()
+    }
+    
+    func getTask(at indexPath: IndexPath) -> Task {
+        isFiltering ? filteredTasks[indexPath.row] : tasks[indexPath.row]
+    }
+    
+    func deleteTask(_ task: Task, at indexPath: IndexPath) {
+        if isFiltering {
+            filteredTasks = removeTask(task, from: filteredTasks)
+            tasks = removeTask(task, from: tasks)
+        } else {
+            tasks = removeTask(task, from: tasks)
+            filteredTasks = removeTask(task, from: filteredTasks)
+        }
+        
+        tableView.deleteRows(at: [indexPath], with: .automatic)
+        storageManager.delete(task)
+    }
+    
+    func removeTask(_ task: Task, from list: [Task]) -> [Task] {
+        var newList = list
+        if let index = newList.firstIndex(of: task) {
+            newList.remove(at: index)
+        }
+        return newList
     }
 }
