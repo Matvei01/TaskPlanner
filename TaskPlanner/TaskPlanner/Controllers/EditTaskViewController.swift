@@ -1,15 +1,16 @@
 //
-//  AddTaskViewController.swift
+//  EditTaskViewController.swift
 //  TaskPlanner
 //
-//  Created by Matvei Khlestov on 02.07.2024.
+//  Created by Matvei Khlestov on 04.07.2024.
 //
 
 import UIKit
 
-final class AddTaskViewController: UIViewController {
+final class EditTaskViewController: UIViewController {
     
     weak var delegate: TaskViewControllerDelegate?
+    var task: Task?
     
     private let storageManager = StorageManager.shared
     
@@ -30,6 +31,7 @@ final class AddTaskViewController: UIViewController {
             bottom: 0,
             right: 15
         )
+        textView.text = task?.title
         textView.font = .systemFont(ofSize: 16, weight: .regular)
         textView.layer.cornerRadius = 10
         textView.layer.borderColor = UIColor.black.cgColor
@@ -103,7 +105,7 @@ final class AddTaskViewController: UIViewController {
 }
 
 // MARK: - Private methods
-private extension AddTaskViewController {
+private extension EditTaskViewController {
     func setupView() {
         view.backgroundColor = .white
         
@@ -125,7 +127,7 @@ private extension AddTaskViewController {
     }
     
     func setupNavigationBar() {
-        title = "Adding new task"
+        title = "Editing task"
         
         navigationItem.leftBarButtonItem = backBarButtonItem
     }
@@ -135,7 +137,13 @@ private extension AddTaskViewController {
             showAlert(title: "Error", message: "Fill in all the fields")
             return
         }
-        storageManager.create(taskName)
+        
+        guard let task = task else {
+            showAlert(title: "Error", message: "Task not found")
+            return
+        }
+        
+        storageManager.update(task, newName: taskName)
         delegate?.reloadData()
         navigationController?.popToRootViewController(animated: true)
     }
@@ -159,7 +167,7 @@ private extension AddTaskViewController {
 }
 
 // MARK: - Alert Controller
-private extension AddTaskViewController {
+private extension EditTaskViewController {
     func showAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Ok", style: .default) { [unowned self] _ in
@@ -171,7 +179,7 @@ private extension AddTaskViewController {
 }
 
 // MARK: - Constraints
-private extension AddTaskViewController {
+private extension EditTaskViewController {
     func setConstraints() {
         setConstraintsForAddStackView()
         setConstraintsForTaskTextView()
@@ -206,3 +214,4 @@ private extension AddTaskViewController {
         ])
     }
 }
+

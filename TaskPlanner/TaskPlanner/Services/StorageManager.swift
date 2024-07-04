@@ -36,6 +36,12 @@ final class StorageManager {
         saveContext()
     }
     
+    func update(_ task: Task, newName: String) {
+        task.title = newName
+        task.date = Date()
+        saveContext()
+    }
+    
     func fetchData(completion: (Result<[Task], Error>) -> Void) {
         let fetchRequest = Task.fetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "date", ascending: false)
