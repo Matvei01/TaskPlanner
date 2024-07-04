@@ -42,6 +42,11 @@ final class StorageManager {
         saveContext()
     }
     
+    func delete(_ task: Task) {
+        viewContext.delete(task)
+        saveContext()
+    }
+    
     func fetchData(completion: (Result<[Task], Error>) -> Void) {
         let fetchRequest = Task.fetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "date", ascending: false)
